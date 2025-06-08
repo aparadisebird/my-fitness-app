@@ -136,7 +136,7 @@ function LoginPage({ setPage }) {
             await signInWithEmailAndPassword(auth, email, password);
             setPage('dashboard');
         } catch (err) {
-            setError('Failed to log in. Please check your credentials.');
+            setError(err.message); // Show the actual error
             console.error("Login Error:", err);
         }
     };
@@ -148,7 +148,7 @@ function LoginPage({ setPage }) {
                     <h2 className="mt-6 text-3xl font-extrabold text-white">Welcome Back!</h2>
                     <p className="mt-2 text-sm text-gray-400">Log in to continue your fitness journey.</p>
                 </div>
-                {error && <p className="text-red-500 text-center">{error}</p>}
+                {error && <p className="text-red-500 text-center bg-red-900/50 p-3 rounded-md">{error}</p>}
                 <form className="mt-8 space-y-6" onSubmit={handleLogin}>
                     <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-2 text-white bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                     <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-2 text-white bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
@@ -162,6 +162,7 @@ function LoginPage({ setPage }) {
     );
 }
 
+// --- UPDATED SignUpPage with better error message ---
 function SignUpPage({ setPage }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -185,8 +186,11 @@ function SignUpPage({ setPage }) {
 
             setPage('dashboard');
         } catch (err) {
-            setError('Failed to create an account. The email might already be in use.');
+            // THIS IS THE IMPORTANT CHANGE
+            // We now show the *actual* error message from Firebase.
+            setError(err.message); 
             console.error("Sign Up Error:", err);
+            console.error("Firebase Error Code:", err.code);
         }
     };
     
@@ -197,7 +201,7 @@ function SignUpPage({ setPage }) {
                     <h2 className="mt-6 text-3xl font-extrabold text-white">Join the Community</h2>
                     <p className="mt-2 text-sm text-gray-400">Create an account to start tracking.</p>
                 </div>
-                {error && <p className="text-red-500 text-center">{error}</p>}
+                {error && <p className="text-red-500 text-center bg-red-900/50 p-3 rounded-md">{error}</p>}
                 <form className="mt-8 space-y-6" onSubmit={handleSignUp}>
                     <input type="text" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} className="w-full px-4 py-2 text-white bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
                     <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-2 text-white bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500" required />
@@ -211,6 +215,7 @@ function SignUpPage({ setPage }) {
         </div>
     );
 }
+
 
 function Navbar({ setPage, handleLogout }) {
     return (
@@ -540,7 +545,6 @@ function ProfilePage({ user, setUser, setPage }) {
     );
 }
 
-// --- NEW COMPONENT: About Page ---
 function AboutPage() {
     return (
         <div className="max-w-4xl mx-auto text-gray-300">
