@@ -22,7 +22,7 @@ import {
     onSnapshot,
     updateDoc,
 } from 'firebase/firestore';
-import { ArrowRight, BarChart, CheckCircle, Flame, Heart, LogOut, Sun, Target, Users, Zap, X, Plus } from 'lucide-react';
+import { ArrowRight, BarChart, CheckCircle, Flame, Heart, LogOut, Sun, Target, Users, Zap, X, Plus, Info } from 'lucide-react';
 
 // --- Firebase Configuration (Updated with your project keys) ---
 const firebaseConfig = {
@@ -41,14 +41,13 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // --- Helper for App ID ---
-// We can keep this for multi-tenancy, but for your single app it's less critical now.
 const appId = 'my-awesome-fitness-app-e7bad'; 
 
 // --- Main App Component ---
 export default function App() {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [page, setPage] = useState('login'); // 'dashboard', 'workouts', etc.
+    const [page, setPage] = useState('login'); // 'dashboard', 'workouts', 'challenges', 'profile', 'about', 'login', 'signup'
     const [isAuthReady, setIsAuthReady] = useState(false);
 
     useEffect(() => {
@@ -98,6 +97,8 @@ export default function App() {
                 return <ChallengesPage user={user} setPage={setPage} />;
             case 'profile':
                 return <ProfilePage user={user} setUser={setUser} setPage={setPage} />;
+            case 'about':
+                return <AboutPage />;
             default:
                 return <LoginPage setPage={setPage} />;
         }
@@ -174,7 +175,6 @@ function SignUpPage({ setPage }) {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
             
-            // Create user profile in Firestore
             await setDoc(doc(db, `users`, user.uid), {
                 name: name,
                 email: email,
@@ -216,11 +216,12 @@ function Navbar({ setPage, handleLogout }) {
     return (
         <nav className="bg-gray-800 p-4 flex justify-between items-center shadow-md">
             <div className="text-2xl font-bold text-blue-400">FitTrack</div>
-            <div className="hidden md:flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-6">
                 <button onClick={() => setPage('dashboard')} className="hover:text-blue-400 transition">Dashboard</button>
                 <button onClick={() => setPage('workouts')} className="hover:text-blue-400 transition">Workouts</button>
                 <button onClick={() => setPage('challenges')} className="hover:text-blue-400 transition">Challenges</button>
                 <button onClick={() => setPage('profile')} className="hover:text-blue-400 transition">Profile</button>
+                <button onClick={() => setPage('about')} className="hover:text-blue-400 transition">About</button>
             </div>
              <button onClick={handleLogout} className="flex items-center space-x-2 bg-red-500 px-3 py-2 rounded-lg hover:bg-red-600 transition">
                 <LogOut size={18} />
@@ -250,6 +251,7 @@ function Dashboard({ user, setPage }) {
                     totalSteps += data.steps || 0;
                 }
             });
+            workoutsData.sort((a, b) => new Date(b.date) - new Date(a.date));
             setWorkouts(workoutsData.slice(0, 5)); // show latest 5
             setStats({ calories: totalCalories, time: totalTime, steps: totalSteps });
         });
@@ -313,7 +315,6 @@ function Dashboard({ user, setPage }) {
     );
 }
 
-
 function WorkoutsPage({ user, setPage }) {
     const [workouts, setWorkouts] = useState([]);
     const [showModal, setShowModal] = useState(false);
@@ -323,7 +324,6 @@ function WorkoutsPage({ user, setPage }) {
         const q = query(collection(db, `users/${user.uid}/workouts`));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const workoutsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            // Sort by date, newest first
             workoutsData.sort((a, b) => new Date(b.date) - new Date(a.date));
             setWorkouts(workoutsData);
         });
@@ -387,7 +387,6 @@ function AddWorkoutModal({ user, setShowModal }) {
                 date: new Date().toISOString(),
             });
             
-            // Give health coins for logging workout
             const userProfileRef = doc(db, 'users', user.uid);
             const userProfileSnap = await getDoc(userProfileRef);
             if(userProfileSnap.exists()){
@@ -536,6 +535,48 @@ function ProfilePage({ user, setUser, setPage }) {
                         <button type="submit" className="py-2 px-6 bg-blue-600 hover:bg-blue-700 rounded-md font-semibold">Save Changes</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    );
+}
+
+// --- NEW COMPONENT: About Page ---
+function AboutPage() {
+    return (
+        <div className="max-w-4xl mx-auto text-gray-300">
+            <h1 className="text-4xl font-bold text-white mb-8 text-center">About FitTrack</h1>
+            
+            <div className="bg-gray-800 p-8 rounded-lg shadow-lg mb-8">
+                <h2 className="text-2xl font-bold text-white mb-4">How to Use This App</h2>
+                <p className="leading-relaxed">
+                    Welcome to FitTrack! This app is designed to be a simple and motivating companion on your fitness journey.
+                </p>
+                <ul className="list-disc list-inside mt-4 space-y-2">
+                    <li><strong className="text-white">Dashboard:</strong> Your main hub. See a quick summary of your daily stats like calories burned, active minutes, and recent workouts.</li>
+                    <li><strong className="text-white">Workouts:</strong> Go here to log a new activity. Click the "Log Workout" button, fill in the details, and see it added to your history.</li>
+                    <li><strong className="text-white">Challenges:</strong> (Coming Soon!) Participate in fun challenges to earn badges and rewards.</li>
+                    <li><strong className="text-white">Profile:</strong> View and update your personal information and fitness goals. You can also see your "Health Coin" balance here!</li>
+                </ul>
+            </div>
+
+            <div className="bg-gray-800 p-8 rounded-lg shadow-lg text-center">
+                <h2 className="text-2xl font-bold text-white mb-6">About the Creator</h2>
+                <img 
+                    src="https://placehold.co/150x150/3B82F6/FFFFFF?text=Siam" 
+                    alt="A photo of Siam"
+                    className="w-36 h-36 rounded-full mx-auto mb-4 border-4 border-blue-500"
+                />
+                <h3 className="text-3xl font-bold text-white">Siam</h3>
+                <p className="text-blue-400 font-semibold text-lg">Student of Public Health</p>
+                <p className="text-gray-400 mb-4">Jahangirnagar University</p>
+
+                <p className="max-w-2xl mx-auto leading-relaxed">
+                    "I created this app to help people track their fitness journey in a simple and motivating way. As a public health student, I believe in the power of accessible tools to promote wellness. I hope you enjoy using it!"
+                </p>
+
+                <div className="mt-6 text-gray-500">
+                    <p>Savar, Dhaka, Bangladesh</p>
+                </div>
             </div>
         </div>
     );
